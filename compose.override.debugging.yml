@@ -1,0 +1,8 @@
+services:
+  api-gateway:
+    command: /dlv --listen=:2345 --headless=true --api-version=2 exec main
+
+    # security_opt:
+    #   - "seccomp:unconfined"
+    # cap_add:
+    #   - SYS_PTRACE

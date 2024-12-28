@@ -1,0 +1,16 @@
+services:
+  api-gateway:
+    build: .
+    ports:
+      - 8080:8080
+      - 2345:2345
+
+  echo-server:
+    image: ealen/echo-server:0.9.2
+    ports:
+      - 8001:80
+
+  cert-server:
+    build: ./external
+    ports:
+      - 8002:8001
