@@ -1,24 +1,35 @@
 package main
 
 import (
+	"context"
 	"log"
 	"net/http"
 
 	"example.com/m/v2/gateway"
+	"example.com/m/v2/monitoring"
 	"example.com/m/v2/security"
 	"github.com/gin-gonic/gin"
 )
 
 func main() {
 	api := gateway.NewAPIGateway()
+	// global security manager, each service has its own too
 	securityManager, _ := security.NewSecurityManager(nil, nil)
+	// monitor resource in background
+	resourceMonitor, _ := monitoring.NewResourceMonitor()
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
+	go resourceMonitor.StartPeriodicMonitoring(ctx)
 	router := api.InitializeRouter(securityManager)
+	// expose rsa public key just for learning purposes,
+	// it's recommended to remove this endpint for any other use
 	router.GET("/rsa-public", func(c *gin.Context) {
 		publicKey, _ := securityManager.ExportPublicKey()
 		c.JSON(http.StatusOK, gin.H{
 			"public": string(publicKey),
 		})
 	})
+	// dynamic service registration
 	router.POST("/register-services/all", func(c *gin.Context) {
 		echoService := &gateway.ServiceConfig{
 			Name:    "echo",
@@ -53,5 +64,8 @@ func main() {
 		api.UpdateRouter(router)
 		c.Status(http.StatusOK)
 	})
+	// add monitoring middleware and endpoints
+	router.Use(resourceMonitor.GetMiddleware())
+	resourceMonitor.SetupEndpoints(router)
 	router.Run(":8080")
 }
