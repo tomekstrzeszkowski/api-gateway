@@ -31,17 +31,14 @@ type SecurityManager struct {
 }
 
 func ReadPrivateKeyFromFile(filename string) (*rsa.PrivateKey, error) {
-	// Read the file contents
 	keyData, err := os.ReadFile(filename)
 	if err != nil {
 		return nil, fmt.Errorf("failed to read private key file: %w", err)
 	}
-	// Decode PEM block
 	block, _ := pem.Decode(keyData)
 	if block == nil {
 		return nil, fmt.Errorf("failed to parse PEM block")
 	}
-	// Parse private key
 	privateKey, err := x509.ParsePKCS1PrivateKey(block.Bytes)
 	if err != nil {
 		// Try PKCS8 format if PKCS1 fails

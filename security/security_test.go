@@ -4,6 +4,7 @@ import (
 	"crypto/rand"
 	"crypto/rsa"
 	"crypto/x509"
+	"encoding/base64"
 	"encoding/pem"
 	"testing"
 )
@@ -55,7 +56,7 @@ func TestExportAndDecrypt(t *testing.T) {
 	pub, _ := x509.ParsePKCS1PublicKey(block.Bytes)
 
 	client_secret, _ := rsa.EncryptPKCS1v15(rand.Reader, pub, []byte("secret message!"))
-	client_message, _ := sm.DecryptRSA(string(client_secret))
+	client_message, _ := sm.DecryptRSA(base64.StdEncoding.EncodeToString(client_secret))
 	if string(client_message) != "secret message!" {
 		t.Error("can not decrypt message using exported key")
 	}
