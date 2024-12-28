@@ -1,2 +1,5 @@
 compose.override.yml
 main
+private.key
+cert.pem
+public.pem

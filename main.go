@@ -34,7 +34,7 @@ func main() {
 			Methods:     []string{"GET", "POST"},
 		})
 		cert := "/external/cert.pem"
-		skipVerify := true
+		skipVerify := false
 		certService := &gateway.ServiceConfig{
 			Name:                          "cert",
 			Scheme:                        "https",
