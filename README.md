@@ -1,10 +1,10 @@
 # API Gateway
 This project is for learning purposes. 
 Key features:
- ✔ Dynamic services registration
- ✔ SSL support
- ✔ Monitoring
- - E2E - TODO
+ - Dynamic services registration ✔
+ - SSL support ✔
+ - Monitoring ✔
+ - E2E encription - TODO
 
 # Debugging
 create `docker.compose.override.yml`, see: `docker.compose.override.debugging.yml`,
@@ -41,4 +41,11 @@ curl localhost:8080/rsa-public
 ```
 ```
 curl localhost:8080/echo -H "X-Encrypted-Request: fail"
+```
+## Metrics
+```
+curl localhost:8080/metrics
+```
+```
+curl localhost:8080/metrics-history
 ```
