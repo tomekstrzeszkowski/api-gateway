@@ -13,7 +13,8 @@ FROM debian:bookworm-slim
 WORKDIR /app/
 COPY --from=builder /app/main main
 COPY --from=builder /go/bin/dlv /
-COPY /external/cert.pem /external/cert.pem
+COPY /external/cert.pem /secr/cert.pem
+COPY /external/private.key /secr/private.key
 EXPOSE 8080 2345
 
 CMD ["./main"]

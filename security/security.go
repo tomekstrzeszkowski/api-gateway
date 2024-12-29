@@ -22,12 +22,12 @@ import (
 )
 
 type SecurityManager struct {
-	privateKey  *rsa.PrivateKey
-	publicKey   *rsa.PublicKey
-	aesKey      []byte
-	mu          sync.RWMutex
-	Certificate *string
-	EncryptBody *bool
+	privateKey            *rsa.PrivateKey
+	publicKey             *rsa.PublicKey
+	aesKey                []byte
+	mu                    sync.RWMutex
+	Certificate           *string
+	skipCertificateVerify *bool
 }
 
 func ReadPrivateKeyFromFile(filename string) (*rsa.PrivateKey, error) {
@@ -57,7 +57,7 @@ func ReadPrivateKeyFromFile(filename string) (*rsa.PrivateKey, error) {
 	return privateKey, nil
 }
 
-func NewSecurityManager(key, certificate *string) (*SecurityManager, error) {
+func NewSecurityManager(key, certificate *string, certificateSkipVerify *bool) (*SecurityManager, error) {
 	var privateKey *rsa.PrivateKey
 	var err error
 	if key == nil {
@@ -74,10 +74,11 @@ func NewSecurityManager(key, certificate *string) (*SecurityManager, error) {
 		return nil, err
 	}
 	return &SecurityManager{
-		privateKey:  privateKey,
-		publicKey:   &privateKey.PublicKey,
-		aesKey:      aesKey,
-		Certificate: certificate,
+		privateKey:            privateKey,
+		publicKey:             &privateKey.PublicKey,
+		aesKey:                aesKey,
+		Certificate:           certificate,
+		skipCertificateVerify: certificateSkipVerify,
 	}, nil
 }
 
@@ -186,10 +187,10 @@ func (sm *SecurityManager) MiddlewareEncryption() gin.HandlerFunc {
 	}
 }
 
-func (sm *SecurityManager) GetTlsConfig(skipCertificateVerify *bool) *tls.Config {
+func (sm *SecurityManager) GetTlsConfig() *tls.Config {
 	skipVerify := false
-	if skipCertificateVerify != nil {
-		skipVerify = *skipCertificateVerify
+	if sm.skipCertificateVerify != nil {
+		skipVerify = *sm.skipCertificateVerify
 	}
 	caCert, err := os.ReadFile(*sm.Certificate)
 	if err != nil {

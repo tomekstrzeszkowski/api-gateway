@@ -1,13 +1,11 @@
 package gateway
 
 import (
-	"context"
 	"fmt"
 	"net/http"
 	"net/http/httputil"
 	"net/url"
 	"sync"
-	"time"
 
 	"example.com/m/v2/security"
 	"github.com/gin-gonic/gin"
@@ -47,11 +45,9 @@ func (gw *APIGateway) AddService(service *ServiceConfig) error {
 		gw.logger.Error("Proxy Error", zap.String("service", service.Name), zap.Error(err))
 		http.Error(w, "Service Error", http.StatusServiceUnavailable)
 	}
-	securityManager, _ := security.NewSecurityManager(service.PrivateKey, service.Certificate)
-	service.SecurityManager = securityManager
-	if securityManager.Certificate != nil {
+	if service.SecurityManager.Certificate != nil {
 		proxy.Transport = &http.Transport{
-			TLSClientConfig: securityManager.GetTlsConfig(service.CertificateInsecureSkipVerify),
+			TLSClientConfig: service.SecurityManager.GetTlsConfig(),
 		}
 	}
 	gw.services[service.Name] = service
@@ -59,14 +55,14 @@ func (gw *APIGateway) AddService(service *ServiceConfig) error {
 	return nil
 }
 
-func (gw *APIGateway) AddRoute(route Route) error {
+func (gw *APIGateway) AddRoute(route *Route) error {
 	gw.mu.Lock()
 	defer gw.mu.Unlock()
 	if _, exists := gw.services[route.ServiceName]; !exists {
 		return fmt.Errorf("service %s does not exist", route.ServiceName)
 	}
 	route.Ready = false
-	gw.routes = append(gw.routes, route)
+	gw.routes = append(gw.routes, *route)
 	return nil
 }
 
@@ -88,12 +84,12 @@ func (gw *APIGateway) UpdateRouter(r *gin.Engine) {
 			gw.logger.Error("Couldn not find proxy", zap.String("service", route.ServiceName))
 			continue
 		}
+		service := gw.services[route.ServiceName]
 		for _, method := range route.Methods {
 			r.Handle(method, route.Path, func(c *gin.Context) {
-				ctx, cancel := context.WithTimeout(c.Request.Context(), 10*time.Second)
-				defer cancel()
-				c.Request = c.Request.WithContext(ctx)
+				cancel := service.RouteHandler(c, service.SecurityManager)
 				serviceProxy.ServeHTTP(c.Writer, c.Request)
+				cancel()
 			})
 		}
 		route.Ready = true

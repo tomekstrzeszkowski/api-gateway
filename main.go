@@ -14,7 +14,7 @@ import (
 func main() {
 	api := gateway.NewAPIGateway()
 	// global security manager, each service has its own too
-	securityManager, _ := security.NewSecurityManager(nil, nil)
+	securityManager, _ := security.NewSecurityManager(nil, nil, nil)
 	// monitor resource in background
 	resourceMonitor, _ := monitoring.NewResourceMonitor()
 	ctx, cancel := context.WithCancel(context.Background())
@@ -31,34 +31,48 @@ func main() {
 	})
 	// dynamic service registration
 	router.POST("/register-services/all", func(c *gin.Context) {
-		echoService := &gateway.ServiceConfig{
-			Name:    "echo",
-			Scheme:  "http",
-			BaseUrl: "echo-server:80",
+		// basic echo service
+		echoService, err := gateway.NewService("echo", "echo-server:80", nil, nil)
+		if err != nil {
+			log.Fatalf("Service adding error %v", err)
 		}
 		if err := api.AddService(echoService); err != nil {
 			log.Fatalf("Service adding error %v", err)
 		}
-		api.AddRoute(gateway.Route{
+		api.AddRoute(&gateway.Route{
 			Path:        "/echo",
 			ServiceName: echoService.Name,
 			Methods:     []string{"GET", "POST"},
 		})
-		cert := "/external/cert.pem"
+		// SSL
+		cert := "/secr/cert.pem"
 		skipVerify := false
-		certService := &gateway.ServiceConfig{
-			Name:                          "cert",
-			Scheme:                        "https",
-			BaseUrl:                       "cert-server:8001",
-			Certificate:                   &cert,
-			CertificateInsecureSkipVerify: &skipVerify,
+		certService, err := gateway.NewService("cert", "cert-server:8001", &cert, &skipVerify)
+		if err != nil {
+			log.Fatalf("Service adding error %v", err)
 		}
 		if err := api.AddService(certService); err != nil {
 			log.Fatalf("Service adding error %v", err)
 		}
-		api.AddRoute(gateway.Route{
+		api.AddRoute(&gateway.Route{
 			Path:        "/cert",
 			ServiceName: certService.Name,
+			Methods:     []string{"POST"},
+		})
+		// Custom E2E encryption
+		privateKey := "/secr/private.key"
+		encryptedService, err := gateway.NewE2eEncryptedService(
+			"encrypted", "encrypted-server:8011", &privateKey, nil, nil,
+		)
+		if err != nil {
+			log.Fatalf("Service adding error %v", err)
+		}
+		if err := api.AddService(encryptedService); err != nil {
+			log.Fatalf("Service adding error %v", err)
+		}
+		api.AddRoute(&gateway.Route{
+			Path:        "/e2e",
+			ServiceName: encryptedService.Name,
 			Methods:     []string{"POST"},
 		})
 		api.UpdateRouter(router)
