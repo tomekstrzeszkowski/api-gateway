@@ -87,9 +87,7 @@ func (gw *APIGateway) UpdateRouter(r *gin.Engine) {
 		service := gw.services[route.ServiceName]
 		for _, method := range route.Methods {
 			r.Handle(method, route.Path, func(c *gin.Context) {
-				cancel := service.RouteHandler(c, service.SecurityManager)
-				serviceProxy.ServeHTTP(c.Writer, c.Request)
-				cancel()
+				service.RouteHandler(c, service.SecurityManager, serviceProxy)
 			})
 		}
 		route.Ready = true

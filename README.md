@@ -5,7 +5,7 @@ Key features:
  - Dynamic services registration ✔
  - Secure Socket Layer (SSL) support ✔
  - Monitoring ✔
- - Customized E2E encryptions ✔
+ - Customized E2E encryptions (for those who take security *very* seriously) ✔
 
 # Debugging
 
@@ -31,7 +31,7 @@ curl -X GET localhost:8080/echo
 
 ## More examples
 
-Test SSL
+Test SSL certificate
 ```
 curl -X POST localhost:8080/cert -d "param1=value1&param2=value2"
 ```
@@ -47,7 +47,10 @@ see: `security_test.go` or `secure_server.py` for more details.
 curl localhost:8080/echo -H "X-Encrypted-Request: fail"
 ```
 
-Customized E2E encryption
+Customized E2E encryption, the gateway encrypts the request body before sending
+the data. The external server decodes that data, add some extra text and encode
+it again. The gateway reads the response and decode it, therefore, so you should 
+see the additional data added by external server.
 ```
 curl -X POST localhost:8080/e2e -d "param1=value1&param2=value2"
 ```
