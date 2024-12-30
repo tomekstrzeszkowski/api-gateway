@@ -47,13 +47,14 @@ see: `security_test.go` or `secure_server.py` for more details.
 curl localhost:8080/echo -H "X-Encrypted-Request: fail"
 ```
 
-Customized E2E encryption, the gateway encrypts the request body before sending
-the data. The external server decodes that data, add some extra text and encode
-it again. The gateway reads the response and decode it, therefore, you should 
-see the additional data added by external server. Gateway use its own private key
-for decrypting data, and public pem imported from external server for encrypting
-data. Same thing is done for the external server, thanks to this private keys
-are never shared, only public.pem are exchanged.
+Customized E2E encryption ensures that the gateway encrypts the request body 
+before sending the data. The external server decodes the data, adds some extra
+text, and encodes it again. The gateway reads the response and decodes it. 
+Therefore, you should see the additional data added by the external server. 
+The gateway uses its own private key for decrypting data and the public PEM 
+imported from the external server for encrypting data. The same process is 
+applied on the external server. Thanks to this approach, private keys are 
+never shared, only public PEM files are exchanged.
 ```
 curl -X POST localhost:8080/e2e -d "param1=value1&param2=value2"
 ```
