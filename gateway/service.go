@@ -26,7 +26,7 @@ func NewService(
 	if certificate != nil {
 		scheme = "https"
 	}
-	securityManager, err := security.NewSecurityManager(nil, certificate, certificateSkipVerify)
+	securityManager, err := security.NewSecurityManager(nil, certificate, certificateSkipVerify, nil)
 	if err != nil {
 		return nil, err
 	}
@@ -38,12 +38,21 @@ func NewService(
 		RouteHandler:    DefaultHandler,
 	}, nil
 }
-func NewE2eEncryptedService(name string, baseUrl string, privateKey *string, certificate *string, certificateSkipVerify *bool) (*ServiceConfig, error) {
+func NewE2eEncryptedService(
+	name string,
+	baseUrl string,
+	privateKey *string,
+	publicKey *string,
+	certificate *string,
+	certificateSkipVerify *bool,
+) (*ServiceConfig, error) {
 	scheme := "http"
 	if certificate != nil {
 		scheme = "https"
 	}
-	securityManager, err := security.NewSecurityManager(privateKey, certificate, certificateSkipVerify)
+	securityManager, err := security.NewSecurityManager(
+		privateKey, certificate, certificateSkipVerify, publicKey,
+	)
 	if err != nil {
 		return nil, err
 	}

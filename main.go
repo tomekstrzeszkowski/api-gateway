@@ -14,7 +14,7 @@ import (
 func main() {
 	api := gateway.NewAPIGateway()
 	// global security manager, each service has its own too
-	securityManager, _ := security.NewSecurityManager(nil, nil, nil)
+	securityManager, _ := security.NewSecurityManager(nil, nil, nil, nil)
 	// monitor resource in background
 	resourceMonitor, _ := monitoring.NewResourceMonitor()
 	ctx, cancel := context.WithCancel(context.Background())
@@ -60,9 +60,10 @@ func main() {
 			Methods:     []string{"POST"},
 		})
 		// Custom E2E encryption
-		privateKey := "/secr/private.key"
+		privateKey := "/secr/gateway/private.key"
+		publicKey := "/secr/public.pem"
 		encryptedService, err := gateway.NewE2eEncryptedService(
-			"encrypted", "encrypted-server:8011", &privateKey, nil, nil,
+			"encrypted", "encrypted-server:8011", &privateKey, &publicKey, nil, nil,
 		)
 		if err != nil {
 			log.Fatalf("Service adding error %v", err)

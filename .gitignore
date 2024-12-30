@@ -3,3 +3,5 @@ main
 external/private.key
 external/cert.pem
 external/public.pem
+private.key
+public.pem

@@ -9,11 +9,12 @@ from cryptography.hazmat.primitives import serialization
 
 class SecurityManager:
     def __init__(self, private_key: rsa.RSAPrivateKey, public_key: rsa.RSAPublicKey):
-        if not public_key:
+        if not private_key:
             private_key = rsa.generate_private_key(
                 public_exponent=65537,
                 key_size=2048
             )
+        if not public_key:
             public_key = private_key.public_key()
         self.public_key = public_key
         self.private_key = private_key
@@ -53,7 +54,6 @@ class SecureHandler(http.server.SimpleHTTPRequestHandler):
     def do_POST(self):
         content_length = int(self.headers["Content-Length"])
         encrypted = self.rfile.read(content_length).decode("utf-8")
-        
         decrypted_data = security_manager.decrypt_rsa(encrypted)
         
         if decrypted_data is None:
@@ -77,8 +77,13 @@ with open("private.key", 'rb') as key_file:
         password=None
     )
 
+public_key = None
+with open("/secr/public.pem", 'rb') as key_file:
+    public_key = serialization.load_pem_public_key(
+        key_file.read(),
+    )
 
-security_manager = SecurityManager(private_key, private_key.public_key())
+security_manager = SecurityManager(private_key, public_key)
 httpd = http.server.HTTPServer(("0.0.0.0", 8011), SecureHandler)
 
 httpd.serve_forever()

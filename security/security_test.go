@@ -10,7 +10,7 @@ import (
 )
 
 func TestEncryptMessage(t *testing.T) {
-	sm, _ := NewSecurityManager(nil, nil, nil)
+	sm, _ := NewSecurityManager(nil, nil, nil, nil)
 	secret := []byte("super secret")
 	encrypted, err := sm.EncryptRSA(secret)
 	if err != nil {
@@ -22,7 +22,7 @@ func TestEncryptMessage(t *testing.T) {
 }
 
 func TestDecryptMessage(t *testing.T) {
-	sm, _ := NewSecurityManager(nil, nil, nil)
+	sm, _ := NewSecurityManager(nil, nil, nil, nil)
 	encrypted, _ := sm.EncryptRSA([]byte("Secret Message"))
 	decrypted, _ := sm.DecryptRSA(encrypted)
 	if string(decrypted) != "Secret Message" {
@@ -31,7 +31,7 @@ func TestDecryptMessage(t *testing.T) {
 }
 
 func TestAESDecrypt(t *testing.T) {
-	sm, _ := NewSecurityManager(nil, nil, nil)
+	sm, _ := NewSecurityManager(nil, nil, nil, nil)
 	encrypted, _ := sm.EncryptAES([]byte("Another secret"))
 	decrypted, _ := sm.DecryptAES(encrypted)
 	if string(decrypted) != "Another secret" {
@@ -40,7 +40,7 @@ func TestAESDecrypt(t *testing.T) {
 }
 
 func TestExportKey(t *testing.T) {
-	sm, _ := NewSecurityManager(nil, nil, nil)
+	sm, _ := NewSecurityManager(nil, nil, nil, nil)
 	publicKeyPEM, err := sm.ExportPublicKey()
 	if err != nil {
 		t.Error("export key failed")
@@ -50,7 +50,7 @@ func TestExportKey(t *testing.T) {
 	}
 }
 func TestExportAndDecrypt(t *testing.T) {
-	sm, _ := NewSecurityManager(nil, nil, nil)
+	sm, _ := NewSecurityManager(nil, nil, nil, nil)
 	publicKeyPEM, _ := sm.ExportPublicKey()
 	block, _ := pem.Decode(publicKeyPEM)
 	pub, _ := x509.ParsePKCS1PublicKey(block.Bytes)
@@ -62,7 +62,7 @@ func TestExportAndDecrypt(t *testing.T) {
 	}
 }
 func TestHashPassword(t *testing.T) {
-	sm, _ := NewSecurityManager(nil, nil, nil)
+	sm, _ := NewSecurityManager(nil, nil, nil, nil)
 	hash, err := sm.HashPassword("password123")
 	if err != nil {
 		t.Error("hasing password")
@@ -73,14 +73,14 @@ func TestHashPassword(t *testing.T) {
 }
 
 func TestCheckingCorrectPassword(t *testing.T) {
-	sm, _ := NewSecurityManager(nil, nil, nil)
+	sm, _ := NewSecurityManager(nil, nil, nil, nil)
 	hash, _ := sm.HashPassword("123pass")
 	if !sm.CheckPasswordHash("123pass", hash) {
 		t.Error("password hash did not match")
 	}
 }
 func TestCheckingIncorrectPassword(t *testing.T) {
-	sm, _ := NewSecurityManager(nil, nil, nil)
+	sm, _ := NewSecurityManager(nil, nil, nil, nil)
 	hash, _ := sm.HashPassword("123pass")
 	if sm.CheckPasswordHash("223pass", hash) {
 		t.Error("password matched")

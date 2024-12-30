@@ -49,8 +49,11 @@ curl localhost:8080/echo -H "X-Encrypted-Request: fail"
 
 Customized E2E encryption, the gateway encrypts the request body before sending
 the data. The external server decodes that data, add some extra text and encode
-it again. The gateway reads the response and decode it, therefore, so you should 
-see the additional data added by external server.
+it again. The gateway reads the response and decode it, therefore, you should 
+see the additional data added by external server. Gateway use its own private key
+for decrypting data, and public pem imported from external server for encrypting
+data. Same thing is done for the external server, thanks to this private keys
+are never shared, only public.pem are exchanged.
 ```
 curl -X POST localhost:8080/e2e -d "param1=value1&param2=value2"
 ```

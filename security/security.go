@@ -57,7 +57,38 @@ func ReadPrivateKeyFromFile(filename string) (*rsa.PrivateKey, error) {
 	return privateKey, nil
 }
 
-func NewSecurityManager(key, certificate *string, certificateSkipVerify *bool) (*SecurityManager, error) {
+func ReadPublicKeyFromFile(filename string) (*rsa.PublicKey, error) {
+	keyData, err := os.ReadFile(filename)
+	if err != nil {
+		return nil, fmt.Errorf("failed to read public key file: %w", err)
+	}
+
+	block, _ := pem.Decode(keyData)
+	if block == nil {
+		return nil, fmt.Errorf("failed to parse PEM block")
+	}
+
+	publicKey, err := x509.ParsePKCS1PublicKey(block.Bytes)
+	if err != nil {
+		// Try PKIX format if PKCS1 fails
+		pkixKey, err := x509.ParsePKIXPublicKey(block.Bytes)
+		if err != nil {
+			return nil, fmt.Errorf("failed to parse public key: %w", err)
+		}
+
+		var ok bool
+		publicKey, ok = pkixKey.(*rsa.PublicKey)
+		if !ok {
+			return nil, fmt.Errorf("key is not an RSA public key")
+		}
+	}
+
+	return publicKey, nil
+}
+
+func NewSecurityManager(
+	key, certificate *string, certificateSkipVerify *bool, publicKeyPath *string,
+) (*SecurityManager, error) {
 	var privateKey *rsa.PrivateKey
 	var err error
 	if key == nil {
@@ -73,9 +104,18 @@ func NewSecurityManager(key, certificate *string, certificateSkipVerify *bool) (
 	if _, err := io.ReadFull(rand.Reader, aesKey); err != nil {
 		return nil, err
 	}
+	var publicKey *rsa.PublicKey
+	if publicKeyPath == nil {
+		publicKey = &privateKey.PublicKey
+	} else {
+		publicKey, err = ReadPublicKeyFromFile(*publicKeyPath)
+		if err != nil {
+			return nil, err
+		}
+	}
 	return &SecurityManager{
 		privateKey:            privateKey,
-		publicKey:             &privateKey.PublicKey,
+		publicKey:             publicKey,
 		aesKey:                aesKey,
 		Certificate:           certificate,
 		skipCertificateVerify: certificateSkipVerify,

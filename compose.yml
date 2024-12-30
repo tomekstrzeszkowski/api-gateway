@@ -20,3 +20,6 @@ services:
     command: python secure_server.py
     ports:
       - 8003:8011
+    volumes:
+      - ./external:/app
+      - ./public.pem:/secr/public.pem
