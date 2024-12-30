@@ -212,21 +212,6 @@ func (sm *SecurityManager) ExportPublicKey() ([]byte, error) {
 	return publicPEM, nil
 }
 
-func (sm *SecurityManager) MiddlewareEncryption() gin.HandlerFunc {
-	return func(c *gin.Context) {
-		if encryptedHeader := c.GetHeader("X-Encrypted-Request"); encryptedHeader != "" {
-			secretMessage, err := sm.DecryptRSA(encryptedHeader)
-			if err != nil {
-				c.JSON(http.StatusUnauthorized, gin.H{"error": "Decryption error"})
-				c.Abort()
-				return
-			}
-			fmt.Print(secretMessage)
-		}
-		c.Next()
-	}
-}
-
 func (sm *SecurityManager) GetTlsConfig() *tls.Config {
 	skipVerify := false
 	if sm.skipCertificateVerify != nil {
@@ -243,5 +228,29 @@ func (sm *SecurityManager) GetTlsConfig() *tls.Config {
 		RootCAs:            rootCAs,
 		MinVersion:         tls.VersionTLS12,
 		InsecureSkipVerify: skipVerify,
+	}
+}
+
+func (sm *SecurityManager) MiddlewareEncryption() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		if encryptedHeader := c.GetHeader("X-Encrypted-Request"); encryptedHeader != "" {
+			secretMessage, err := sm.DecryptRSA(encryptedHeader)
+			if err != nil {
+				c.JSON(http.StatusUnauthorized, gin.H{"error": "Decryption error"})
+				c.Abort()
+				return
+			}
+			fmt.Print(secretMessage)
+		}
+		c.Next()
+	}
+}
+
+func (sm *SecurityManager) EndpointExposePublicKey() gin.HandlerFunc {
+	return func(c *gin.Context) {
+		publicKey, _ := sm.ExportPublicKey()
+		c.JSON(http.StatusOK, gin.H{
+			"public": string(publicKey),
+		})
 	}
 }

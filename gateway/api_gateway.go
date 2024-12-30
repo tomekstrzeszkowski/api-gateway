@@ -1,6 +1,7 @@
 package gateway
 
 import (
+	"errors"
 	"fmt"
 	"net/http"
 	"net/http/httputil"
@@ -92,4 +93,80 @@ func (gw *APIGateway) UpdateRouter(r *gin.Engine) {
 		}
 		route.Ready = true
 	}
+}
+
+func (gw *APIGateway) RegisterEchoServiceWithRoutes(c *gin.Context) error {
+	echoService, _ := NewService("echo", "echo-server:80", nil, nil)
+	err := gw.AddServiceWithRoutes(echoService, &[]*Route{
+		&Route{
+			Path:        "/echo",
+			ServiceName: echoService.Name,
+			Methods:     []string{"GET", "POST"},
+		},
+	})
+	if err != nil {
+		gw.logger.Error(fmt.Sprintf("%v", err))
+		c.Abort()
+	}
+	return err
+}
+
+func (gw *APIGateway) RegisterCertServiceWithRoutes(c *gin.Context) error {
+	cert := "/secr/cert.pem"
+	skipVerify := false
+	certService, _ := NewService("cert", "cert-server:8001", &cert, &skipVerify)
+	err := gw.AddServiceWithRoutes(certService, &[]*Route{&Route{
+		Path:        "/cert",
+		ServiceName: certService.Name,
+		Methods:     []string{"POST"},
+	}})
+	if err != nil {
+		gw.logger.Error(fmt.Sprintf("%v", err))
+		c.Abort()
+	}
+	return err
+}
+
+func (gw *APIGateway) RegisterE2eServiceWithRoutes(c *gin.Context, router *gin.Engine) error {
+	privateKey := "/secr/gateway/private.key"
+	publicKey := "/secr/public.pem"
+	encryptedService, _ := NewE2eEncryptedService(
+		"encrypted", "encrypted-server:8011", &privateKey, &publicKey, nil, nil,
+	)
+	route := Route{
+		Path:        "/e2e",
+		ServiceName: encryptedService.Name,
+		Methods:     []string{"POST"},
+	}
+	err := gw.AddServiceWithRoutes(encryptedService, &[]*Route{&route})
+	if err != nil {
+		gw.logger.Error(fmt.Sprintf("%v", err))
+		c.Abort()
+	} else {
+		router.GET(
+			fmt.Sprintf("/rsa-public%s", route.Path),
+			encryptedService.SecurityManager.EndpointExposePublicKey(),
+		)
+	}
+
+	return err
+}
+
+func (gw *APIGateway) AddServiceWithRoutes(service *ServiceConfig, routes *[]*Route) error {
+	if service == nil {
+		gw.logger.Sugar().Fatalf("Service adding error")
+		return errors.New("Service adding error")
+	}
+	if err := gw.AddService(service); err != nil {
+		gw.logger.Sugar().Fatalf("Service adding error %v", err)
+		return fmt.Errorf("Service `%s` adding error %v", service.Name, err)
+	}
+	for _, route := range *routes {
+		err := gw.AddRoute(route)
+		if err != nil {
+			gw.logger.Sugar().Fatalf("Route adding error %v", err)
+			return fmt.Errorf("Route `%s` adding error %v", route.Path, err)
+		}
+	}
+	return nil
 }
