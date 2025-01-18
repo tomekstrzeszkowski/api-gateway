@@ -7,6 +7,17 @@ Key features:
  - Monitoring ✔
  - Customized E2E encryptions (for those who take security *very* seriously) ✔
 
+# Installing
+
+Generate API keys
+```
+openssl genrsa -out private.key 2048 > private.key
+```
+```
+openssl rsa -in private.key -pubout -out public.pem > public.pem
+```
+Generate keys for external service, see `external/README.md`.
+
 # Debugging
 
 Create `docker.compose.override.yml`, 
